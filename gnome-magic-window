@@ -4,11 +4,13 @@
 set -eu
 
 function usage() {
-  echo "usage: $0 WINDOW-NAME" >&2
-  echo "  Where WINDOW-NAME is a string to identify" >&2
-  echo "  the program to bring to front. Examples:" >&2
-  echo "  'terminator', 'terminal', 'chromium'..." >&2
-  echo "  Use --list to list available window names." >&2
+  echo "usage: $0 WINDOW-NAME PROGRAM" >&2
+  echo "  Where:" >&2
+  echo "  - WINDOW-NAME is a string to identify the program to bring to" >&2
+  echo "    front. Examples: 'terminator', 'terminal', 'chromium'..." >&2
+  echo "    Use --list to list available window names." >&2
+  echo "  - PROGRAM is the process to launch if the window isn't present" >&2
+  echo "    yet. Examples: 'terminator', '/usr/bin/firefox'..." >&2
   exit 1
 }
 
@@ -62,16 +64,15 @@ function find_magic_window_id() {
   "
 }
 
-[ $# -eq 1 ] || usage
-
-if [ "$1" = "--list" ]; then
+if [ $# -eq 1 ] && [ "$1" = "--list" ]; then
   get_active_windows
 
-elif [ "${1:0:1}" = "-" ]; then
+elif [ $# -ne 2 ]; then
   usage
 
 else
   WINDOW="$1"
+  PROGRAM="$2"
 
   COOKIE=/tmp/gnome-magic-window-$(id -u)
   if [ ! -e "$COOKIE" ]; then
@@ -80,11 +81,15 @@ else
   fi
 
   current=$(get_active_window_id)
-  magic=$(find_magic_window_id "$WINDOW")
+  magic=$(find_magic_window_id "$WINDOW" || echo "NOT-PRESENT")
   last_not_magic=$(cat "$COOKIE")
 
-  if [ "$current" != "$magic" ]; then
-    set_active_window "$magic"
+  if [ "$magic" = "NOT-PRESENT" ]; then
+    which "$PROGRAM" &>/dev/null || fail "cannot run '$PROGRAM': not found"
+    "$PROGRAM" &
+    echo "$current" >"$COOKIE"
+  elif [ "$current" != "$magic" ]; then
+    set_active_window "$magic" || true
     echo "$current" >"$COOKIE"
   elif [ -n "$last_not_magic" ]; then
     set_active_window "$last_not_magic"
