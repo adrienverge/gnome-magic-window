@@ -12,6 +12,10 @@ It is comparable to *Guake* and *Compiz Put*, except that gnome-magic-window
 works with Gnome Shell and the new Wayland display server. (It does not use
 xdotool and wmctrl, that worked with X11 but not with Wayland.)
 
+## Demo
+
+![pseudo-video demonstration](demo.gif)
+
 ## Script usage
 
 ```sh
