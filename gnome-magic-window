@@ -37,7 +37,11 @@ function get_active_windows() {
 }
 
 function get_active_window_id() {
-  gnome_looking_glass "global.get_window_actors().slice(-1)[0].toString();"
+  gnome_looking_glass "
+    global.get_window_actors()
+    .filter(w => !w.get_meta_window().get_wm_class().includes('Gnome-shell'))
+    .slice(-1)[0].toString();
+  "
 }
 
 function set_active_window() {
@@ -58,7 +62,7 @@ function find_magic_window_id() {
     const window = global.get_window_actors()
                    .filter(w => w.get_meta_window()
                    .get_wm_class().toLowerCase()
-                   .contains('$search_term'.toLowerCase()))[0];
+                   .includes('$search_term'.toLowerCase()))[0];
     if (window)
       window.toString();
   "
