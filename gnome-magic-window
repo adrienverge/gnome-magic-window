@@ -38,9 +38,9 @@ function get_active_windows() {
 
 function get_active_window_id() {
   gnome_looking_glass "
-    global.get_window_actors()
-    .filter(w => !w.get_meta_window().get_wm_class().includes('Gnome-shell'))
-    .slice(-1)[0].toString();
+    (global.get_window_actors()
+     .filter(w => !w.get_meta_window().get_wm_class().includes('Gnome-shell'))
+     .slice(-1)[0] || ['']).toString();
   "
 }
 
