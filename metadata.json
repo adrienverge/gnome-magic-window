@@ -1,0 +1,9 @@
+{
+  "name": "gnome-magic-window",
+  "description": "Bind a key to a specific program in Gnome Shell",
+  "uuid": "gnome-magic-window@adrienverge",
+  "url": "https://github.com/adrienverge/gnome-magic-window",
+  "shell-version": [
+    "41"
+  ]
+}

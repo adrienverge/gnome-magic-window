@@ -16,56 +16,60 @@ xdotool and wmctrl, that worked with X11 but not with Wayland.)
 
 ![pseudo-video demonstration](demo.gif)
 
-## Script usage
-
-```sh
-./gnome-magic-window Terminator terminator
-                        /          \
-            the name of the      the program to spawn
-         window to look for      if window not found
-```
-
-```sh
-./gnome-magic-window --list
-[["[0x561dccbdc3e0 MetaWindowActor]","Gnome-shell"],
- ["[0x561dccbdc7c0 MetaWindowActor]","Nautilus"],
- ["[0x561dccbddf00 MetaWindowActor]","Chromium-browser"],
- ["[0x561dccbdd360 MetaWindowActor]","Chromium-browser"],
- ["[0x561dccbdcba0 MetaWindowActor]","Terminator"]]
-```
-
 ## Quick install
 
 The following commands assume that the trigger key is `F12` and the program to
 bring to front is `Terminator`.
-* Replace `F12` with `Pause`, `<Super>a` or whichever key you prefer.
+* Replace `F12` with `<Pause>`, `<Super>a` or whichever key you prefer.
 * Replace `Terminator` by the program to be brought to front when the key is
-  pressed (you can use `gnome-magic-window --list` to see all current window
-  names).
-* Replace `terminator` by the command to run if no window named `Terminator` is
-  found.
+  pressed.
+* Replace `/usr/bin/terminator` by the command to run if no window named
+  `Terminator` is found. Make sure you use a absolute path.
 
-### 1. Install the script
+### 1. Install the extension
 
-```sh
-mkdir -p $HOME/bin
-curl https://raw.githubusercontent.com/adrienverge/gnome-magic-window/master/gnome-magic-window >$HOME/bin/gnome-magic-window
-chmod +x $HOME/bin/gnome-magic-window
+Since Gnome 41, gnome-magic-window is shipped as a Gnome extension. To install
+this extension from the Git repository:
+
+```shell
+cd ~/.local/share/gnome-shell/extensions
+git clone https://github.com/adrienverge/gnome-magic-window gnome-magic-window@adrienverge
 ```
 
-### 2. Create the shortcut in Gnome Shell
+### 2. Customize
 
-You can do it using the menu in Settings > Keyboard > Shortcuts ([see
-help](https://help.gnome.org/users/gnome-help/stable/keyboard-shortcuts-set.html)):
-in this case set `My custom shortcut` as name,
-`/home/<YOU>/bin/gnome-magic-window Terminator terminator` as command and `F12`
-as shortcut.
+Edit `extension.js` to set your favorite key, window name and command to run:
 
-Otherwise, you can directly create this shortcut using command line:
-
-```sh
-dconf write /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/name "'My custom shortcut'"
-dconf write /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/binding "'F12'"
-dconf write /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/command "'$HOME/bin/gnome-magic-window Terminator terminator'"
-dconf write /org/gnome/settings-daemon/plugins/media-keys/custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/']"
+```javascript
+const SHORTCUT = 'F12';
+const TITLE = 'Terminator';
+const COMMAND = '/usr/bin/terminator';
 ```
+
+### 3. Enable the extension
+
+After installing files and customizing, you probably need to close your session
+and log in again in order for Gnome to the extension.
+
+Either run:
+```shell
+gnome-extensions enable gnome-magic-window@adrienverge
+```
+
+Or open Gnome "Extensions" utility to enable the extension.
+
+You're set! Try pressing your magic key.
+
+### 9. Debug
+
+In case it doesn't work, you may need to add your gnome version in
+`metadata.json` and reload your session, or debug futher.
+
+```shell
+gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/GnomeMagicWindow --method org.gnome.Shell.Extensions.GnomeMagicWindow.magic_key_pressed Terminator terminator
+```
+
+## For Gnome versions < 41
+
+Use this repo on commit 26230da or before, and read the README file from that
+version.
