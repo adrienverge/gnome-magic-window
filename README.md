@@ -20,7 +20,7 @@ xdotool and wmctrl, that worked with X11 but not with Wayland.)
 
 The following commands assume that the trigger key is `F12` and the program to
 bring to front is `Terminator`.
-* Replace `F12` with `<Pause>`, `<Super>a` or whichever key you prefer.
+* Replace `F12` with `Pause`, `<Super>a` or whichever key you prefer.
 * Replace `Terminator` by the program to be brought to front when the key is
   pressed.
 * Replace `/usr/bin/terminator` by the command to run if no window named
@@ -60,12 +60,13 @@ Or open Gnome "Extensions" utility to enable the extension.
 
 You're set! Try pressing your magic key.
 
-### 9. Debug
+### 4. Debug
 
 In case it doesn't work, you may need to add your gnome version in
 `metadata.json` and reload your session, or debug futher.
 
 ```shell
+# Alt+F2↵ r↵
 gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/GnomeMagicWindow --method org.gnome.Shell.Extensions.GnomeMagicWindow.magic_key_pressed Terminator terminator
 ```
 
