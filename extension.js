@@ -36,11 +36,17 @@ class Extension {
       </node>`, this);
     this._dbus.export(Gio.DBus.session, '/org/gnome/Shell/Extensions/GnomeMagicWindow');
 
-    global.display.connect('accelerator-activated',
-                           this.magic_key_pressed.bind(this, TITLE, COMMAND));
-    const action = global.display.grab_accelerator(SHORTCUT, 0);
-    if (action != Meta.KeyBindingAction.NONE) {
-      let name = Meta.external_binding_name_for_action(action);
+    global.display.connect(
+      'accelerator-activated',
+      (display, action, deviceId, timestamp) => {
+        if (action === this._action) {
+          return this.magic_key_pressed(TITLE, COMMAND);
+        }
+      }
+    );
+    this._action = global.display.grab_accelerator(SHORTCUT, 0);
+    if (this._action !== Meta.KeyBindingAction.NONE) {
+      const name = Meta.external_binding_name_for_action(this._action);
       Main.wm.allowKeybinding(name, Shell.ActionMode.ALL);
     }
   }
@@ -49,6 +55,9 @@ class Extension {
     this._dbus.flush();
     this._dbus.unexport();
     delete this._dbus;
+
+    global.display.ungrab_accelerator(this._action);
+    delete this._action;
   }
 
   debug() {
