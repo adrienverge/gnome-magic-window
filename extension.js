@@ -19,6 +19,7 @@ const COMMAND = '/usr/bin/terminator';
 
 const { Gio } = imports.gi;
 const Main = imports.ui.main;
+const Mainloop = imports.mainloop;
 const Meta = imports.gi.Meta;
 const Shell = imports.gi.Shell;
 const Util = imports.misc.util;
@@ -94,8 +95,12 @@ class Extension {
     const magic = this.find_magic_window(title);
 
     if (!magic) {
-      Util.spawnCommandLine(command);
-      this._last_not_magic = current;
+      if (!this._launching) {
+        this._launching = true;
+        Mainloop.timeout_add(1000, () => this._launching = false, 1000);
+        Util.spawnCommandLine(command);
+        this._last_not_magic = current;
+      }
 
     } else if (current && current.id !== magic.id) {
       Main.activateWindow(magic.ref.get_meta_window());
