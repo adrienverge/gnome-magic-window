@@ -13,9 +13,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-const SHORTCUT = 'F12';
-const TITLE = 'Terminator';
-const COMMAND = '/usr/bin/terminator';
+const BINDINGS = [
+  {
+    shortcut: 'F12',
+    title: 'Terminator',
+    command: 'terminator'
+  },
+  // More bindings can be added, for example:
+  // {
+  //   shortcut: 'F11',
+  //   title: 'Gworldclock',
+  //   command: 'gworldclock'
+  // },
+];
 
 const { Gio } = imports.gi;
 const Main = imports.ui.main;
@@ -37,28 +47,36 @@ class Extension {
       </node>`, this);
     this._dbus.export(Gio.DBus.session, '/org/gnome/Shell/Extensions/GnomeMagicWindow');
 
-    global.display.connect(
-      'accelerator-activated',
-      (display, action, deviceId, timestamp) => {
-        if (action === this._action) {
-          return this.magic_key_pressed(TITLE, COMMAND);
-        }
+    this._actions = [];
+
+    for (const binding of BINDINGS) {
+      const thisAction = global.display.grab_accelerator(binding.shortcut, 0);
+      if (thisAction !== Meta.KeyBindingAction.NONE) {
+        global.display.connect(
+          'accelerator-activated',
+          (display, action, deviceId, timestamp) => {
+            if (action === thisAction) {
+              return this.magic_key_pressed(binding.title, binding.command);
+            }
+          }
+        );
+
+        const name = Meta.external_binding_name_for_action(thisAction);
+        Main.wm.allowKeybinding(name, Shell.ActionMode.ALL);
+
+        this._actions.push(thisAction);
       }
-    );
-    this._action = global.display.grab_accelerator(SHORTCUT, 0);
-    if (this._action !== Meta.KeyBindingAction.NONE) {
-      const name = Meta.external_binding_name_for_action(this._action);
-      Main.wm.allowKeybinding(name, Shell.ActionMode.ALL);
     }
   }
 
   disable() {
+    for (const action of this._actions)
+      global.display.ungrab_accelerator(action);
+    this._actions = [];
+
     this._dbus.flush();
     this._dbus.unexport();
     delete this._dbus;
-
-    global.display.ungrab_accelerator(this._action);
-    delete this._action;
   }
 
   debug() {
