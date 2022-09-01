@@ -1,12 +1,13 @@
 gnome-magic-window
 ==================
 
-Bind a key to a specific program in Gnome Shell:
-* When the key is pressed and this program is in background, its window is
-  brought up to front.
-* When the key is pressed and this program is already in front, the last window
-  if brought in front again.
-* When the key is pressed and the program isn't launched yet, it is spawned.
+Bind keys to a specific program in Gnome Shell:
+* When the corresponding key is pressed and this program is in background,
+  its window is brought to the front.
+* When the corresponding key is pressed and this program is already at the
+  front, the last window is brought to the front again.
+* When the corresponding key is pressed and the program isn't launched yet,
+  it is spawned by running the program in the `command` property.
 
 It is comparable to *Guake* and *Compiz Put*, except that gnome-magic-window
 works with Gnome Shell and the new Wayland display server. (It does not use
@@ -18,13 +19,18 @@ xdotool and wmctrl, that worked with X11 but not with Wayland.)
 
 ## Quick install
 
-The following commands assume that the trigger key is `F12` and the program to
-bring to front is `Terminator`.
+The following commands assume that one of the elements in `BINDINGS` has a
+shortcut property of `F12`, a title of `Terminator` and a command of
+`/usr/bin/terminator`.
 * Replace `F12` with `Pause`, `<Super>a` or whichever key you prefer.
 * Replace `Terminator` by the program to be brought to front when the key is
   pressed.
 * Replace `/usr/bin/terminator` by the command to run if no window named
   `Terminator` is found. Make sure you use a absolute path.
+* Remove any array elements from `BINDINGS` that you don't require.
+* Uncomment the example or add a new array element to `BINDINGS` containing
+  the shortcut, window title and the command to launch (which will be
+  searched for on the `PATH` if not absolute.)
 
 ### 1. Install the extension
 
@@ -38,12 +44,22 @@ git clone https://github.com/adrienverge/gnome-magic-window gnome-magic-window@a
 
 ### 2. Customize
 
-Edit `extension.js` to set your favorite key, window name and command to run:
+Edit `extension.js` to set your favorite key, window name and command to
+run, for example:
 
 ```javascript
-const SHORTCUT = 'F12';
-const TITLE = 'Terminator';
-const COMMAND = '/usr/bin/terminator';
+const BINDINGS = [
+  {
+    shortcut: 'F12',
+    title: 'Terminator',
+    command: 'terminator'
+  },
+  {
+    shortcut: 'F11',
+    title: 'Show gworldclock',
+    command: 'gworldclock'
+  },
+];
 ```
 
 ### 3. Enable the extension
