@@ -107,7 +107,7 @@ class Extension {
     // For debugging:
     // Util.spawn(['/bin/bash', '-c', `echo '${this.debug()}' > /tmp/test`]);
     // throw new Error(this.debug());
-    // log(this.debug());
+    // log(this.debug());  // visible in journalctl -f
 
     const current = this.get_active_window();
     const magic = this.find_magic_window(title);
