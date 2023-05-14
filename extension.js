@@ -109,23 +109,31 @@ class Extension {
     // throw new Error(this.debug());
     // log(this.debug());  // visible in journalctl -f
 
-    const current = this.get_active_window();
+      // https://gjs-docs.gnome.org/meta8~8/meta.window#method-activate
+      // current is Meta.WindowActor
+    const current = global.display.focus_window;
     const magic = this.find_magic_window(title);
-
     if (!magic) {
       if (!this._launching) {
         this._launching = true;
         Mainloop.timeout_add(1000, () => this._launching = false, 1000);
         Util.spawnCommandLine(command);
-        this._last_not_magic = current;
       }
-
-    } else if (current && current.id !== magic.id) {
-      Main.activateWindow(magic.ref.get_meta_window());
-      this._last_not_magic = current;
-
-    } else if (this._last_not_magic) {
-      Main.activateWindow(this._last_not_magic.ref.get_meta_window());
+    } else if (current && current.get_wm_class() !== magic.title) {
+        let win =magic.ref.get_meta_window();
+        if(win.minimized){
+            win.unminimize();
+        }
+        win.raise();
+        // win.activate(global.get_current_time());
+        Main.activateWindow(win);
+    } else if (current){
+        if(current.is_above()){
+            current.unmake_above();
+        }
+        if (current.can_minimize()) {
+            current.minimize();
+        }
     }
   }
 }
