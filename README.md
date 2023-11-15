@@ -82,6 +82,11 @@ In case it doesn't work, you may need to add your gnome version in
 gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/GnomeMagicWindow --method org.gnome.Shell.Extensions.GnomeMagicWindow.magic_key_pressed Terminator terminator
 ```
 
+## For Gnome versions < 45
+
+Use this repo on commit b640974 or before, and read the README file from that
+version.
+
 ## For Gnome versions < 41
 
 Use this repo on commit 26230da or before, and read the README file from that

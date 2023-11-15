@@ -27,14 +27,16 @@ const BINDINGS = [
   // },
 ];
 
-const { Gio } = imports.gi;
-const Main = imports.ui.main;
-const Mainloop = imports.mainloop;
-const Meta = imports.gi.Meta;
-const Shell = imports.gi.Shell;
-const Util = imports.misc.util;
+import Gio from 'gi://Gio';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
+import * as Main from 'resource:///org/gnome/shell/ui/main.js';
+const Mainloop = imports.mainloop
+import Meta from 'gi://Meta'; // const Meta = imports.gi.Meta; //TODO
+import Shell from 'gi://Shell';
+import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
-class Extension {
+
+export default class GnomeMagicWindowExtension extends Extension {
   enable() {
     this._dbus = Gio.DBusExportedObject.wrapJSObject(`
       <node>
@@ -128,8 +130,4 @@ class Extension {
       Main.activateWindow(this._last_not_magic.ref.get_meta_window());
     }
   }
-}
-
-function init() {
-  return new Extension();
 }
