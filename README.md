@@ -38,6 +38,7 @@ Since Gnome 41, gnome-magic-window is shipped as a Gnome extension. To install
 this extension from the Git repository:
 
 ```shell
+mkdir -p ~/.local/share/gnome-shell/extensions
 cd ~/.local/share/gnome-shell/extensions
 git clone https://github.com/adrienverge/gnome-magic-window gnome-magic-window@adrienverge
 ```
