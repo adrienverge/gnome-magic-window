@@ -5,7 +5,7 @@ Bind keys to a specific program in Gnome Shell:
 * When the corresponding key is pressed and this program is in background,
   its window is brought to the front.
 * When the corresponding key is pressed and this program is already at the
-  front, the last window is brought to the front again.
+  front, the window would be minimized.
 * When the corresponding key is pressed and the program isn't launched yet,
   it is spawned by running the program in the `command` property.
 
