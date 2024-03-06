@@ -93,7 +93,7 @@ export default class GnomeMagicWindowExtension extends Extension {
            .map(w => ({id: w.toString(),
                        ref: w,
                        title: w.get_meta_window().get_wm_class()}))
-           .filter(w => !w.title.includes('Gnome-shell'));
+           .filter(w => w.title && !w.title.includes('Gnome-shell'));
   }
 
   get_active_window() {
