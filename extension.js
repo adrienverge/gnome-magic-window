@@ -41,7 +41,7 @@ export default class GnomeMagicWindowExtension extends Extension {
   _dbus = null;
   _actions = [];
   _launching = false;
-  _last_not_magic = null;
+  _first_window = null;
 
   enable() {
     this._dbus = Gio.DBusExportedObject.wrapJSObject(`
@@ -97,7 +97,6 @@ export default class GnomeMagicWindowExtension extends Extension {
     return global.get_window_actors()
       .map(w => w.get_meta_window())
       .map(w => ({
-        id: w.toString(),
         ref: w,
         title: w.get_wm_class()
       }))
@@ -106,16 +105,35 @@ export default class GnomeMagicWindowExtension extends Extension {
 
   get_active_window() {
     const current = global.display.focus_window;
+    if (!current) {
+      return null;
+    }
     return {
-      id: current.toString(),
       ref: current,
       title: current.get_wm_class()
     };
   }
 
-  find_magic_window(title) {
+  find_magic_windows(title) {
     return this.get_windows()
-      .filter(w => w.title.toLowerCase().includes(title.toLowerCase()))[0];
+      .filter(w => w.title.toLowerCase().includes(title.toLowerCase()));
+  }
+
+  focus_window(window) {
+    if (window.minimized) {
+      window.unminimize();
+    }
+    window.raise();
+    Main.activateWindow(window);
+  }
+
+  hide_window(window) {
+    if (window.is_above()) {
+      window.unmake_above();
+    }
+    if (window.can_minimize()) {
+      window.minimize();
+    }
   }
 
   magic_key_pressed(title, command) {
@@ -125,29 +143,35 @@ export default class GnomeMagicWindowExtension extends Extension {
     // log(this.debug());  // visible in journalctl -f
 
     const current = this.get_active_window();
-    const next = this.find_magic_window(title);
+    const magic_windows = this.find_magic_windows(title);
+    const next = magic_windows[0];
 
-    // In case no application window is found launch the application.
+    // Launch application if no window of it found.
     if (!next) {
       if (!this._launching) {
         this._launching = true;
         Mainloop.timeout_add(1000, () => this._launching = false, 1000);
         Util.spawnCommandLine(command);
-        this._last_not_magic = current;
       }
       return;
     }
 
-    // Toggle though the windows of the application.
-    if (current && current.id !== next.id) {
-      Main.activateWindow(next.ref);
-      this._last_not_magic = current;
+    // Focus "next" window, if other application is focused.
+    if (current && current.title !== next.title) {
+      this._first_window = next.ref;
+      this.focus_window(next.ref);
       return;
     }
 
-    // Bring previous application back to front after toggling through all windows.
-    if (this._last_not_magic) {
-      Main.activateWindow(this._last_not_magic.ref);
+    // If one window of the application is focused, switch to next or lower all if cycled through all.
+    if (!this._first_window || !magic_windows.find(w => w.ref === this._first_window)) {
+      this._first_window = next.ref;
+    }
+    if (next.ref === this._first_window) {
+      magic_windows.forEach(w => this.hide_window(w.ref));
+      this._first_window = null;
+    } else {
+      this.focus_window(next.ref);
     }
   }
 }
