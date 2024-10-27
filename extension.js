@@ -37,6 +37,12 @@ import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
 
 export default class GnomeMagicWindowExtension extends Extension {
+
+  _dbus = null;
+  _actions = [];
+  _launching = false;
+  _last_not_magic = null;
+
   enable() {
     this._dbus = Gio.DBusExportedObject.wrapJSObject(`
       <node>
@@ -49,14 +55,12 @@ export default class GnomeMagicWindowExtension extends Extension {
       </node>`, this);
     this._dbus.export(Gio.DBus.session, '/org/gnome/Shell/Extensions/GnomeMagicWindow');
 
-    this._actions = [];
-
     for (const binding of BINDINGS) {
       const thisAction = global.display.grab_accelerator(binding.shortcut, 0);
       if (thisAction !== Meta.KeyBindingAction.NONE) {
         global.display.connect(
           'accelerator-activated',
-          (display, action, deviceId, timestamp) => {
+          (display, action) => {
             if (action === thisAction) {
               return this.magic_key_pressed(binding.title, binding.command);
             }
@@ -72,13 +76,14 @@ export default class GnomeMagicWindowExtension extends Extension {
   }
 
   disable() {
-    for (const action of this._actions)
+    for (const action of this._actions) {
       global.display.ungrab_accelerator(action);
+    }
     this._actions = [];
 
     this._dbus.flush();
     this._dbus.unexport();
-    delete this._dbus;
+    this._dbus = null;
   }
 
   debug() {
@@ -112,21 +117,28 @@ export default class GnomeMagicWindowExtension extends Extension {
     // log(this.debug());  // visible in journalctl -f
 
     const current = this.get_active_window();
-    const magic = this.find_magic_window(title);
+    const next = this.find_magic_window(title);
 
-    if (!magic) {
+    // In case no application window is found launch the application.
+    if (!next) {
       if (!this._launching) {
         this._launching = true;
         Mainloop.timeout_add(1000, () => this._launching = false, 1000);
         Util.spawnCommandLine(command);
         this._last_not_magic = current;
       }
+      return;
+    }
 
-    } else if (current && current.id !== magic.id) {
-      Main.activateWindow(magic.ref.get_meta_window());
+    // Toggle though the windows of the application.
+    if (current && current.id !== next.id) {
+      Main.activateWindow(next.ref.get_meta_window());
       this._last_not_magic = current;
+      return;
+    }
 
-    } else if (this._last_not_magic) {
+    // Bring previous application back to front after toggling through all windows.
+    if (this._last_not_magic) {
       Main.activateWindow(this._last_not_magic.ref.get_meta_window());
     }
   }

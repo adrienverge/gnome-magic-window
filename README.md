@@ -76,7 +76,7 @@ You're set! Try pressing your magic key.
 ### 4. Debug
 
 In case it doesn't work, you may need to add your gnome version in
-`metadata.json` and reload your session, or debug futher.
+`metadata.json` and reload your session, or debug further.
 
 ```shell
 # Alt+F2↵ r↵
