@@ -95,19 +95,27 @@ export default class GnomeMagicWindowExtension extends Extension {
 
   get_windows() {
     return global.get_window_actors()
-           .map(w => ({id: w.toString(),
-                       ref: w,
-                       title: w.get_meta_window().get_wm_class()}))
-           .filter(w => w.title && !w.title.includes('Gnome-shell'));
+      .map(w => w.get_meta_window())
+      .map(w => ({
+        id: w.toString(),
+        ref: w,
+        title: w.get_wm_class()
+      }))
+      .filter(w => w.title && !w.title.includes('Gnome-shell'));
   }
 
   get_active_window() {
-    return this.get_windows().slice(-1)[0];
+    const current = global.display.focus_window;
+    return {
+      id: current.toString(),
+      ref: current,
+      title: current.get_wm_class()
+    };
   }
 
   find_magic_window(title) {
     return this.get_windows()
-           .filter(w => w.title.toLowerCase().includes(title.toLowerCase()))[0];
+      .filter(w => w.title.toLowerCase().includes(title.toLowerCase()))[0];
   }
 
   magic_key_pressed(title, command) {
@@ -132,14 +140,14 @@ export default class GnomeMagicWindowExtension extends Extension {
 
     // Toggle though the windows of the application.
     if (current && current.id !== next.id) {
-      Main.activateWindow(next.ref.get_meta_window());
+      Main.activateWindow(next.ref);
       this._last_not_magic = current;
       return;
     }
 
     // Bring previous application back to front after toggling through all windows.
     if (this._last_not_magic) {
-      Main.activateWindow(this._last_not_magic.ref.get_meta_window());
+      Main.activateWindow(this._last_not_magic.ref);
     }
   }
 }
