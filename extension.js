@@ -37,6 +37,12 @@ import * as Util from 'resource:///org/gnome/shell/misc/util.js';
 
 
 export default class GnomeMagicWindowExtension extends Extension {
+
+  _dbus = null;
+  _actions = [];
+  _launching = false;
+  _first_window = null;
+
   enable() {
     this._dbus = Gio.DBusExportedObject.wrapJSObject(`
       <node>
@@ -49,14 +55,12 @@ export default class GnomeMagicWindowExtension extends Extension {
       </node>`, this);
     this._dbus.export(Gio.DBus.session, '/org/gnome/Shell/Extensions/GnomeMagicWindow');
 
-    this._actions = [];
-
     for (const binding of BINDINGS) {
       const thisAction = global.display.grab_accelerator(binding.shortcut, 0);
       if (thisAction !== Meta.KeyBindingAction.NONE) {
         global.display.connect(
           'accelerator-activated',
-          (display, action, deviceId, timestamp) => {
+          (display, action) => {
             if (action === thisAction) {
               return this.magic_key_pressed(binding.title, binding.command);
             }
@@ -72,13 +76,14 @@ export default class GnomeMagicWindowExtension extends Extension {
   }
 
   disable() {
-    for (const action of this._actions)
+    for (const action of this._actions) {
       global.display.ungrab_accelerator(action);
+    }
     this._actions = [];
 
     this._dbus.flush();
     this._dbus.unexport();
-    delete this._dbus;
+    this._dbus = null;
   }
 
   debug() {
@@ -90,19 +95,45 @@ export default class GnomeMagicWindowExtension extends Extension {
 
   get_windows() {
     return global.get_window_actors()
-           .map(w => ({id: w.toString(),
-                       ref: w,
-                       title: w.get_meta_window().get_wm_class()}))
-           .filter(w => w.title && !w.title.includes('Gnome-shell'));
+      .map(w => w.get_meta_window())
+      .map(w => ({
+        ref: w,
+        title: w.get_wm_class()
+      }))
+      .filter(w => w.title && !w.title.includes('Gnome-shell'));
   }
 
   get_active_window() {
-    return this.get_windows().slice(-1)[0];
+    const current = global.display.focus_window;
+    if (!current) {
+      return null;
+    }
+    return {
+      ref: current,
+      title: current.get_wm_class()
+    };
   }
 
-  find_magic_window(title) {
+  find_magic_windows(title) {
     return this.get_windows()
-           .filter(w => w.title.toLowerCase().includes(title.toLowerCase()))[0];
+      .filter(w => w.title.toLowerCase().includes(title.toLowerCase()));
+  }
+
+  focus_window(window) {
+    if (window.minimized) {
+      window.unminimize();
+    }
+    window.raise();
+    Main.activateWindow(window);
+  }
+
+  hide_window(window) {
+    if (window.is_above()) {
+      window.unmake_above();
+    }
+    if (window.can_minimize()) {
+      window.minimize();
+    }
   }
 
   magic_key_pressed(title, command) {
@@ -112,22 +143,35 @@ export default class GnomeMagicWindowExtension extends Extension {
     // log(this.debug());  // visible in journalctl -f
 
     const current = this.get_active_window();
-    const magic = this.find_magic_window(title);
+    const magic_windows = this.find_magic_windows(title);
+    const next = magic_windows[0];
 
-    if (!magic) {
+    // Launch application if no window of it found.
+    if (!next) {
       if (!this._launching) {
         this._launching = true;
         Mainloop.timeout_add(1000, () => this._launching = false, 1000);
         Util.spawnCommandLine(command);
-        this._last_not_magic = current;
       }
+      return;
+    }
 
-    } else if (current && current.id !== magic.id) {
-      Main.activateWindow(magic.ref.get_meta_window());
-      this._last_not_magic = current;
+    // Focus "next" window, if other application is focused.
+    if (current && current.title !== next.title) {
+      this._first_window = next.ref;
+      this.focus_window(next.ref);
+      return;
+    }
 
-    } else if (this._last_not_magic) {
-      Main.activateWindow(this._last_not_magic.ref.get_meta_window());
+    // If one window of the application is focused, switch to next or lower all if cycled through all.
+    if (!this._first_window || !magic_windows.find(w => w.ref === this._first_window)) {
+      this._first_window = next.ref;
+    }
+    if (next.ref === this._first_window) {
+      magic_windows.forEach(w => this.hide_window(w.ref));
+      this._first_window = null;
+    } else {
+      this.focus_window(next.ref);
     }
   }
 }
