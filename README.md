@@ -5,7 +5,10 @@ Bind keys to a specific program in Gnome Shell:
 * When the corresponding key is pressed and this program is in background,
   its window is brought to the front.
 * When the corresponding key is pressed and this program is already at the
-  front, the last window is brought to the front again.
+  front, the next window of the same program is brought to the front.
+* When the corresponding key is pressed and the last window of this program
+  is already at the front, the last window is brought to the front again.
+  (By configuration, this behavior can be changed to minimizing all windows of the program.)
 * When the corresponding key is pressed and the program isn't launched yet,
   it is spawned by running the program in the `command` property.
 
@@ -76,7 +79,7 @@ You're set! Try pressing your magic key.
 ### 4. Debug
 
 In case it doesn't work, you may need to add your gnome version in
-`metadata.json` and reload your session, or debug futher.
+`metadata.json` and reload your session, or debug further.
 
 ```shell
 # Alt+F2↵ r↵
